@@ -24,6 +24,12 @@ const DEPTH_INSTRUCTIONS: Record<BorisDepth, string> = {
   ].join('\n'),
 };
 
+export const DEPTH_CREDIT_COSTS: Record<BorisDepth, number> = {
+  FAST: 1,
+  NORMAL: 2,
+  DEEP: 4,
+};
+
 export function normalizeBorisDepth(value: unknown): BorisDepth {
   if (value === 'FAST' || value === 'NORMAL' || value === 'DEEP') {
     return value;
@@ -34,6 +40,10 @@ export function normalizeBorisDepth(value: unknown): BorisDepth {
 
 export function getDepthInstructions(depth: BorisDepth): string {
   return DEPTH_INSTRUCTIONS[depth];
+}
+
+export function getDepthCreditCost(depth: BorisDepth): number {
+  return DEPTH_CREDIT_COSTS[depth];
 }
 
 export function getRuntimeCore(fullCore: string, depth: BorisDepth): string {

@@ -48,11 +48,32 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 }
 .meta { font-size: 13px; color: var(--muted); }
 
-.depthSelector {
+.creditPanel {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 20px 0 6px;
+}
+
+.creditPanel > div {
+  background: rgba(15, 17, 21, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.creditLabel {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.depthSelector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 6px;
 }
 
 .depthButton {
@@ -62,7 +83,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 96px;
+  min-height: 106px;
   padding: 14px;
   text-align: left;
 }
@@ -74,9 +95,33 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   line-height: 1.35;
 }
 
+.depthButtonHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.depthButtonHeader strong {
+  color: var(--text);
+}
+
+.depthButtonHeader em {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  padding: 3px 8px;
+}
+
 .depthButton.active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px rgba(200, 90, 18, 0.45);
+}
+
+.depthButton.active .depthButtonHeader em {
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .primaryButton {
@@ -84,6 +129,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 }
 
 @media (max-width: 720px) {
+  .creditPanel,
   .depthSelector {
     grid-template-columns: 1fr;
   }

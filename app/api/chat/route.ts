@@ -3,14 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   BorisDepth,
   getBorisCore,
+  getDepthCreditCost,
   getDepthInstructions,
   getRuntimeCore,
   normalizeBorisDepth,
 } from '../../../lib/core';
 
 const MAX_INPUT_CHARS = 10000;
-const RATE_LIMIT_PER_DAY = Number(process.env.BORIS_RATE_LIMIT_PER_DAY || 10);
-const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DAILY_CREDIT_LIMIT = Number(process.env.BORIS_DAILY_CREDIT_LIMIT || 20);
+const CREDIT_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const MAX_OUTPUT_TOKENS: Record<BorisDepth, number> = {
   FAST: 450,
@@ -18,12 +19,21 @@ const MAX_OUTPUT_TOKENS: Record<BorisDepth, number> = {
   DEEP: 1100,
 };
 
-type RateLimitBucket = {
-  count: number;
+type CreditLimitBucket = {
+  usedCredits: number;
   resetAt: number;
 };
 
-const rateLimitStore = new Map<string, RateLimitBucket>();
+type CreditLimitResult = {
+  allowed: boolean;
+  limit: number;
+  used: number;
+  remaining: number;
+  cost: number;
+  resetAt: number;
+};
+
+const creditLimitStore = new Map<string, CreditLimitBucket>();
 
 function getClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
@@ -35,70 +45,95 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get('x-real-ip') || 'unknown';
 }
 
-function checkRateLimit(ip: string) {
+function spendCredits(ip: string, cost: number): CreditLimitResult {
   const now = Date.now();
-  const existing = rateLimitStore.get(ip);
+  const existing = creditLimitStore.get(ip);
 
   if (!existing || existing.resetAt <= now) {
-    const bucket = { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
-    rateLimitStore.set(ip, bucket);
+    const resetAt = now + CREDIT_LIMIT_WINDOW_MS;
+
+    if (cost > DAILY_CREDIT_LIMIT) {
+      return {
+        allowed: false,
+        limit: DAILY_CREDIT_LIMIT,
+        used: 0,
+        remaining: DAILY_CREDIT_LIMIT,
+        cost,
+        resetAt,
+      };
+    }
+
+    const bucket = { usedCredits: cost, resetAt };
+    creditLimitStore.set(ip, bucket);
+
     return {
       allowed: true,
-      remaining: Math.max(RATE_LIMIT_PER_DAY - 1, 0),
-      resetAt: bucket.resetAt,
+      limit: DAILY_CREDIT_LIMIT,
+      used: bucket.usedCredits,
+      remaining: Math.max(DAILY_CREDIT_LIMIT - bucket.usedCredits, 0),
+      cost,
+      resetAt,
     };
   }
 
-  if (existing.count >= RATE_LIMIT_PER_DAY) {
+  if (existing.usedCredits + cost > DAILY_CREDIT_LIMIT) {
     return {
       allowed: false,
-      remaining: 0,
+      limit: DAILY_CREDIT_LIMIT,
+      used: existing.usedCredits,
+      remaining: Math.max(DAILY_CREDIT_LIMIT - existing.usedCredits, 0),
+      cost,
       resetAt: existing.resetAt,
     };
   }
 
-  existing.count += 1;
-  rateLimitStore.set(ip, existing);
+  existing.usedCredits += cost;
+  creditLimitStore.set(ip, existing);
 
   return {
     allowed: true,
-    remaining: Math.max(RATE_LIMIT_PER_DAY - existing.count, 0),
+    limit: DAILY_CREDIT_LIMIT,
+    used: existing.usedCredits,
+    remaining: Math.max(DAILY_CREDIT_LIMIT - existing.usedCredits, 0),
+    cost,
     resetAt: existing.resetAt,
   };
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const rateLimit = checkRateLimit(getClientIp(request));
+    const body = await request.json();
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+    const depth = normalizeBorisDepth(body.depth);
+    const cost = getDepthCreditCost(depth);
 
-    if (!rateLimit.allowed) {
+    if (!message) {
+      return NextResponse.json({ error: 'Message is required.' }, { status: 400 });
+    }
+
+    if (message.length > MAX_INPUT_CHARS) {
+      return NextResponse.json(
+        { error: `Message is too long. Maximum is ${MAX_INPUT_CHARS} characters.` },
+        { status: 400 }
+      );
+    }
+
+    const creditLimit = spendCredits(getClientIp(request), cost);
+
+    if (!creditLimit.allowed) {
       return NextResponse.json(
         {
-          error: `Daily request limit reached. Try again after ${new Date(rateLimit.resetAt).toISOString()}.`,
-          rateLimit,
+          error: `Daily credit limit reached. ${depth} mode costs ${cost} credits, but only ${creditLimit.remaining} credits remain. Try again after ${new Date(creditLimit.resetAt).toISOString()}.`,
+          depth,
+          creditLimit,
         },
         { status: 429 }
       );
     }
 
-    const body = await request.json();
-    const message = typeof body.message === 'string' ? body.message.trim() : '';
-    const depth = normalizeBorisDepth(body.depth);
-
-    if (!message) {
-      return NextResponse.json({ error: 'Message is required.', rateLimit }, { status: 400 });
-    }
-
-    if (message.length > MAX_INPUT_CHARS) {
-      return NextResponse.json(
-        { error: `Message is too long. Maximum is ${MAX_INPUT_CHARS} characters.`, rateLimit },
-        { status: 400 }
-      );
-    }
-
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'OPENAI_API_KEY is not configured.', rateLimit },
+        { error: 'OPENAI_API_KEY is not configured.', depth, creditLimit },
         { status: 500 }
       );
     }
@@ -127,7 +162,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       answer,
       depth,
-      rateLimit,
+      creditLimit,
       runtime: {
         fullCoreChars: fullCore.length,
         runtimeCoreChars: runtimeCore.length,
