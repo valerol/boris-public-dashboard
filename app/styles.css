@@ -119,6 +119,25 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   box-shadow: 0 0 0 1px rgba(200, 90, 18, 0.45);
 }
 
+.samplePromptRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.sampleButton {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.sampleButton:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
 
 .creditPanel {
   display: grid;
@@ -214,5 +233,44 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 
   .demoIntro strong {
     text-align: left;
+  }
+}
+
+.topBar {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.topBar .meta {
+  margin: 0;
+}
+
+.languageSwitch {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.languageButton {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 8px 11px;
+}
+
+.languageButton.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 520px) {
+  .topBar {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

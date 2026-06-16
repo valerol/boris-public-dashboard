@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-type BorisDepth = 'FAST' | 'NORMAL' | 'DEEP';
-type BorisDemo = 'UNKNOWN_REGISTER' | 'SIMA_ANALYSIS' | 'DECISION_TRACE';
+import { BorisDemo, BorisDepth, Locale, translations } from '../lib/i18n';
 
 type CreditLimit = {
   allowed: boolean;
@@ -26,50 +24,31 @@ type ChatResponse = {
   };
 };
 
-const depthDescriptions: Record<BorisDepth, string> = {
-  FAST: 'Short answer, critical unknowns, lowest token use.',
-  NORMAL: 'Balanced BORIS answer with unknowns and compact SIMA checks.',
-  DEEP: 'Richer analysis with unknowns, SIMA, trace, and physiology markers.',
-};
-
 const depthCosts: Record<BorisDepth, number> = {
   FAST: 1,
   NORMAL: 2,
   DEEP: 4,
 };
 
-const demoDescriptions: Record<BorisDemo, { title: string; subtitle: string; sample: string }> = {
-  UNKNOWN_REGISTER: {
-    title: 'Unknown Register',
-    subtitle: 'Finds critical unknowns, ranks risk, and proposes testable hypotheses instead of pretending certainty.',
-    sample:
-      'I run a small online business and want to choose the next growth step. Sales are steady but have stopped growing for the last few months. I know the product has some repeat buyers, the website gets regular traffic, and I have a limited budget for only one major move. I have already tried small discounts and a few social posts, but the result was weak. Help me understand which unknowns matter most, what hypotheses could explain the stagnation, and what information I should collect before deciding.',
-  },
-  SIMA_ANALYSIS: {
-    title: 'SIMA Analysis',
-    subtitle: 'Decomposes the system, checks dependencies, and identifies the most likely bottleneck.',
-    sample:
-      'I manage a service project that should become more profitable, but the system feels stuck. We have enough incoming requests, several people are working on delivery, and customers are generally satisfied, yet the final profit is almost unchanged. We have already tried working faster and taking more requests, but that created more coordination problems. I need to see the system as parts, find the most likely constraint, and understand what should be changed first.',
-  },
-  DECISION_TRACE: {
-    title: 'Why BORIS answered this way',
-    subtitle: 'Shows the decision path, assumptions, evidence checks, and protocol-level reasoning trace.',
-    sample:
-      'I need to choose between two strategies for a project. One strategy can grow faster but requires more money, more management attention, and creates a higher chance of a painful mistake. The other strategy is slower, but it is easier to control and safer for the team. We have tried cautious growth and it worked, but not fast enough. I want a recommendation, and I also want to see how the conclusion was reached, which assumptions mattered most, and what would change the decision.',
-  },
-};
-
 const DAILY_CREDIT_LIMIT = 20;
 
-function formatCreditText(creditLimit?: CreditLimit): string {
+function creditWord(locale: Locale, amount: number): string {
+  const t = translations[locale];
+  return amount === 1 ? t.credit : t.credits;
+}
+
+function formatCreditText(locale: Locale, creditLimit?: CreditLimit): string {
+  const t = translations[locale];
+
   if (!creditLimit) {
-    return `${DAILY_CREDIT_LIMIT} credits/IP/day`;
+    return `${DAILY_CREDIT_LIMIT} ${t.creditsPerDay}`;
   }
 
-  return `${creditLimit.remaining}/${creditLimit.limit} credits remaining today`;
+  return `${creditLimit.remaining}/${creditLimit.limit} ${t.remainingToday}`;
 }
 
 export default function HomePage() {
+  const [locale, setLocale] = useState<Locale>('en');
   const [message, setMessage] = useState('');
   const [depth, setDepth] = useState<BorisDepth>('NORMAL');
   const [demo, setDemo] = useState<BorisDemo>('UNKNOWN_REGISTER');
@@ -78,6 +57,10 @@ export default function HomePage() {
   const [error, setError] = useState('');
   const [creditLimit, setCreditLimit] = useState<CreditLimit | undefined>();
   const [runtimeText, setRuntimeText] = useState('');
+
+  const t = translations[locale];
+  const demoDescriptions = t.demos;
+  const depthDescriptions = t.depthDescriptions;
 
   async function submit() {
     setLoading(true);
@@ -99,8 +82,9 @@ export default function HomePage() {
       }
 
       if (data.runtime) {
+        const responseDemo = data.demo || demo;
         setRuntimeText(
-          `Runtime core: ${data.runtime.runtimeCoreChars}/${data.runtime.fullCoreChars} characters · ${data.depth || depth} mode · ${demoDescriptions[data.demo || demo].title}`
+          `${t.runtimeCore}: ${data.runtime.runtimeCoreChars}/${data.runtime.fullCoreChars} ${t.characters} · ${data.depth || depth} ${t.mode} · ${demoDescriptions[responseDemo].title}`
         );
       }
 
@@ -108,7 +92,7 @@ export default function HomePage() {
         throw new Error(data.error || 'Request failed');
       }
 
-      setAnswer(data.answer || 'No answer returned.');
+      setAnswer(data.answer || t.noAnswer);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -118,7 +102,22 @@ export default function HomePage() {
 
   function selectDemo(selectedDemo: BorisDemo) {
     setDemo(selectedDemo);
-    setMessage(demoDescriptions[selectedDemo].sample);
+    setMessage(translations[locale].demos[selectedDemo].sample);
+    setAnswer('');
+    setError('');
+    setRuntimeText('');
+  }
+
+  function switchLocale(nextLocale: Locale) {
+    const currentSample = translations[locale].demos[demo].sample;
+    const shouldReplacePrompt = message.trim().length === 0 || message === currentSample;
+
+    setLocale(nextLocale);
+
+    if (shouldReplacePrompt) {
+      setMessage(translations[nextLocale].demos[demo].sample);
+    }
+
     setAnswer('');
     setError('');
     setRuntimeText('');
@@ -127,19 +126,33 @@ export default function HomePage() {
   return (
     <main>
       <section className="card">
-        <p className="meta">BORIS Public Dashboard · MVP-1</p>
-        <h1>BOIS / SIMA / BORIS</h1>
+        <div className="topBar">
+          <p className="meta">{t.meta}</p>
+          <div className="languageSwitch" aria-label="Language switcher">
+            {(['en', 'ru'] as Locale[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={locale === option ? 'languageButton active' : 'languageButton'}
+                onClick={() => switchLocale(option)}
+              >
+                {option.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <h1>{t.title}</h1>
         <p>
-          Ask a question and see how BORIS applies the public BOIS/SIMA/BORIS core.
-          This MVP does not store user archives or conversation content.
+          {t.intro} {t.noStorage}
         </p>
 
         <div className="demoIntro">
-          <span>2–3 minute BORIS demo</span>
-          <strong>Unknown Register → SIMA Analysis → Decision Trace</strong>
+          <span>{t.demoIntroLabel}</span>
+          <strong>{t.demoIntroFlow}</strong>
         </div>
 
-        <div className="demoSelector" aria-label="BORIS demonstration focus">
+        <div className="demoSelector" aria-label={t.demoAriaLabel}>
           {(['UNKNOWN_REGISTER', 'SIMA_ANALYSIS', 'DECISION_TRACE'] as BorisDemo[]).map((option, index) => (
             <button
               key={option}
@@ -156,24 +169,26 @@ export default function HomePage() {
 
         <div className="creditPanel" aria-live="polite">
           <div>
-            <span className="creditLabel">Demo focus</span>
+            <span className="creditLabel">{t.creditLabels.demoFocus}</span>
             <strong>{demoDescriptions[demo].title}</strong>
           </div>
           <div>
-            <span className="creditLabel">Selected mode</span>
+            <span className="creditLabel">{t.creditLabels.selectedMode}</span>
             <strong>{depth}</strong>
           </div>
           <div>
-            <span className="creditLabel">Cost</span>
-            <strong>{depthCosts[depth]} credits</strong>
+            <span className="creditLabel">{t.creditLabels.cost}</span>
+            <strong>
+              {depthCosts[depth]} {creditWord(locale, depthCosts[depth])}
+            </strong>
           </div>
           <div>
-            <span className="creditLabel">Budget</span>
-            <strong>{formatCreditText(creditLimit)}</strong>
+            <span className="creditLabel">{t.creditLabels.budget}</span>
+            <strong>{formatCreditText(locale, creditLimit)}</strong>
           </div>
         </div>
 
-        <div className="depthSelector" aria-label="BORIS depth mode">
+        <div className="depthSelector" aria-label={t.depthAriaLabel}>
           {(['FAST', 'NORMAL', 'DEEP'] as BorisDepth[]).map((option) => (
             <button
               key={option}
@@ -183,7 +198,9 @@ export default function HomePage() {
             >
               <span className="depthButtonHeader">
                 <strong>{option}</strong>
-                <em>{depthCosts[option]} credit{depthCosts[option] > 1 ? 's' : ''}</em>
+                <em>
+                  {depthCosts[option]} {creditWord(locale, depthCosts[option])}
+                </em>
               </span>
               <span>{depthDescriptions[option]}</span>
             </button>
@@ -194,19 +211,21 @@ export default function HomePage() {
           value={message}
           maxLength={10000}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Ask BORIS a question..."
+          placeholder={t.textareaPlaceholder}
         />
 
         <p className="meta">
-          {message.length}/10000 characters · {formatCreditText(creditLimit)}
+          {message.length}/10000 {t.characters} · {formatCreditText(locale, creditLimit)}
           {runtimeText ? ` · ${runtimeText}` : ''}
         </p>
 
         <button className="primaryButton" onClick={submit} disabled={loading || message.trim().length === 0}>
-          {loading ? 'Thinking...' : `Run ${demoDescriptions[demo].title} · ${depth} · ${depthCosts[depth]} credits`}
+          {loading
+            ? t.thinking
+            : `${t.run} ${demoDescriptions[demo].title} · ${depth} · ${depthCosts[depth]} ${creditWord(locale, depthCosts[depth])}`}
         </button>
 
-        {error && <div className="output">Error: {error}</div>}
+        {error && <div className="output">{t.error}: {error}</div>}
         {answer && <div className="output">{answer}</div>}
       </section>
     </main>
