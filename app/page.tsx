@@ -113,20 +113,21 @@ export default function HomePage() {
     }
   }
 
-  function useSamplePrompt(selectedDemo: BorisDemo) {
+  function selectDemo(selectedDemo: BorisDemo) {
     setDemo(selectedDemo);
     setMessage(demoDescriptions[selectedDemo].sample);
     setAnswer('');
     setError('');
+    setRuntimeText('');
   }
 
   return (
     <main>
       <section className="card">
         <p className="meta">BORIS Public Dashboard · MVP-1</p>
-        <h1>BORIS</h1>
+        <h1>BOIS / SIMA / BORIS</h1>
         <p>
-          Ask a question and see how BORIS applies the public BOIS/BORIS core.
+          Ask a question and see how BORIS applies the public BOIS/SIMA/BORIS core.
           This MVP does not store user archives or conversation content.
         </p>
 
@@ -141,19 +142,11 @@ export default function HomePage() {
               key={option}
               type="button"
               className={demo === option ? 'demoButton active' : 'demoButton'}
-              onClick={() => setDemo(option)}
+              onClick={() => selectDemo(option)}
             >
               <span className="demoNumber">{index + 1}</span>
               <strong>{demoDescriptions[option].title}</strong>
               <span>{demoDescriptions[option].subtitle}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="samplePromptRow">
-          {(['UNKNOWN_REGISTER', 'SIMA_ANALYSIS', 'DECISION_TRACE'] as BorisDemo[]).map((option) => (
-            <button key={option} type="button" className="sampleButton" onClick={() => useSamplePrompt(option)}>
-              Use {demoDescriptions[option].title} sample
             </button>
           ))}
         </div>
