@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 type BorisDepth = 'FAST' | 'NORMAL' | 'DEEP';
+type BorisDemo = 'UNKNOWN_REGISTER' | 'SIMA_ANALYSIS' | 'DECISION_TRACE';
 
 type CreditLimit = {
   allowed: boolean;
@@ -17,6 +18,7 @@ type ChatResponse = {
   answer?: string;
   error?: string;
   depth?: BorisDepth;
+  demo?: BorisDemo;
   creditLimit?: CreditLimit;
   runtime?: {
     fullCoreChars: number;
@@ -36,6 +38,24 @@ const depthCosts: Record<BorisDepth, number> = {
   DEEP: 4,
 };
 
+const demoDescriptions: Record<BorisDemo, { title: string; subtitle: string; sample: string }> = {
+  UNKNOWN_REGISTER: {
+    title: 'Unknown Register',
+    subtitle: 'Shows what BORIS refuses to fake: unknowns, assumptions, and missing evidence.',
+    sample: 'Should I launch an online store for elephant pants in Russia?',
+  },
+  SIMA_ANALYSIS: {
+    title: 'SIMA Analysis',
+    subtitle: 'Shows decomposition: goal, system parts, dependencies, risks, and failure point.',
+    sample: 'Why is my online store not growing, and what part of the system should I fix first?',
+  },
+  DECISION_TRACE: {
+    title: 'Why BORIS answered this way',
+    subtitle: 'Shows an audit-style trace of protocols without exposing hidden chain-of-thought.',
+    sample: 'Should I increase sales at any cost, or optimize for profit first?',
+  },
+};
+
 const DAILY_CREDIT_LIMIT = 20;
 
 function formatCreditText(creditLimit?: CreditLimit): string {
@@ -49,6 +69,7 @@ function formatCreditText(creditLimit?: CreditLimit): string {
 export default function HomePage() {
   const [message, setMessage] = useState('');
   const [depth, setDepth] = useState<BorisDepth>('NORMAL');
+  const [demo, setDemo] = useState<BorisDemo>('UNKNOWN_REGISTER');
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,7 +86,7 @@ export default function HomePage() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, depth }),
+        body: JSON.stringify({ message, depth, demo }),
       });
 
       const data = (await response.json()) as ChatResponse;
@@ -76,7 +97,7 @@ export default function HomePage() {
 
       if (data.runtime) {
         setRuntimeText(
-          `Runtime core: ${data.runtime.runtimeCoreChars}/${data.runtime.fullCoreChars} characters · ${data.depth || depth} mode`
+          `Runtime core: ${data.runtime.runtimeCoreChars}/${data.runtime.fullCoreChars} characters · ${data.depth || depth} mode · ${demoDescriptions[data.demo || demo].title}`
         );
       }
 
@@ -92,6 +113,13 @@ export default function HomePage() {
     }
   }
 
+  function useSamplePrompt(selectedDemo: BorisDemo) {
+    setDemo(selectedDemo);
+    setMessage(demoDescriptions[selectedDemo].sample);
+    setAnswer('');
+    setError('');
+  }
+
   return (
     <main>
       <section className="card">
@@ -102,7 +130,39 @@ export default function HomePage() {
           This MVP does not store user archives or conversation content.
         </p>
 
+        <div className="demoIntro">
+          <span>2–3 minute BORIS demo</span>
+          <strong>Unknown Register → SIMA Analysis → Decision Trace</strong>
+        </div>
+
+        <div className="demoSelector" aria-label="BORIS demonstration focus">
+          {(['UNKNOWN_REGISTER', 'SIMA_ANALYSIS', 'DECISION_TRACE'] as BorisDemo[]).map((option, index) => (
+            <button
+              key={option}
+              type="button"
+              className={demo === option ? 'demoButton active' : 'demoButton'}
+              onClick={() => setDemo(option)}
+            >
+              <span className="demoNumber">{index + 1}</span>
+              <strong>{demoDescriptions[option].title}</strong>
+              <span>{demoDescriptions[option].subtitle}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="samplePromptRow">
+          {(['UNKNOWN_REGISTER', 'SIMA_ANALYSIS', 'DECISION_TRACE'] as BorisDemo[]).map((option) => (
+            <button key={option} type="button" className="sampleButton" onClick={() => useSamplePrompt(option)}>
+              Use {demoDescriptions[option].title} sample
+            </button>
+          ))}
+        </div>
+
         <div className="creditPanel" aria-live="polite">
+          <div>
+            <span className="creditLabel">Demo focus</span>
+            <strong>{demoDescriptions[demo].title}</strong>
+          </div>
           <div>
             <span className="creditLabel">Selected mode</span>
             <strong>{depth}</strong>
@@ -147,7 +207,7 @@ export default function HomePage() {
         </p>
 
         <button className="primaryButton" onClick={submit} disabled={loading || message.trim().length === 0}>
-          {loading ? 'Thinking...' : `Ask BORIS · ${depth} · ${depthCosts[depth]} credits`}
+          {loading ? 'Thinking...' : `Run ${demoDescriptions[demo].title} · ${depth} · ${depthCosts[depth]} credits`}
         </button>
 
         {error && <div className="output">Error: {error}</div>}

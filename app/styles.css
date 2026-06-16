@@ -17,7 +17,7 @@ body {
 }
 
 main {
-  max-width: 920px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 48px 20px;
 }
@@ -48,9 +48,100 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 }
 .meta { font-size: 13px; color: var(--muted); }
 
-.creditPanel {
+.demoIntro {
+  align-items: center;
+  background: rgba(200, 90, 18, 0.08);
+  border: 1px solid rgba(200, 90, 18, 0.35);
+  border-radius: 14px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 20px 0 14px;
+  padding: 13px 15px;
+}
+
+.demoIntro span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.demoIntro strong {
+  color: var(--text);
+  font-size: 14px;
+  text-align: right;
+}
+
+.demoSelector {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 10px;
+}
+
+.demoButton {
+  background: #0f1115;
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: grid;
+  gap: 8px;
+  min-height: 154px;
+  padding: 14px;
+  text-align: left;
+}
+
+.demoButton strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.demoButton span:not(.demoNumber) {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.demoNumber {
+  align-items: center;
+  background: rgba(200, 90, 18, 0.18);
+  border: 1px solid rgba(200, 90, 18, 0.45);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 13px;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.demoButton.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(200, 90, 18, 0.45);
+}
+
+.samplePromptRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.sampleButton {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.sampleButton:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.creditPanel {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 20px 0 6px;
 }
@@ -128,9 +219,19 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   margin-top: 2px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 820px) {
   .creditPanel,
+  .demoSelector,
   .depthSelector {
     grid-template-columns: 1fr;
+  }
+
+  .demoIntro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .demoIntro strong {
+    text-align: left;
   }
 }

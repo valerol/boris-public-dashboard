@@ -1,11 +1,14 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  BorisDemo,
   BorisDepth,
   getBorisCore,
   getDepthCreditCost,
+  getDemoInstructions,
   getDepthInstructions,
   getRuntimeCore,
+  normalizeBorisDemo,
   normalizeBorisDepth,
 } from '../../../lib/core';
 
@@ -105,6 +108,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const message = typeof body.message === 'string' ? body.message.trim() : '';
     const depth = normalizeBorisDepth(body.depth);
+    const demo = normalizeBorisDemo(body.demo);
     const cost = getDepthCreditCost(depth);
 
     if (!message) {
@@ -148,7 +152,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are BORIS Public Dashboard MVP. Use the following public BOIS/BORIS runtime core as operating context. Do not claim to store user archives or retain private files.\n\n${getDepthInstructions(depth)}\n\nBORIS RUNTIME CORE:\n${runtimeCore}`,
+          content: `You are BORIS Public Dashboard MVP. Use the following public BOIS/BORIS runtime core as operating context. Do not claim to store user archives or retain private files.\n\n${getDepthInstructions(depth)}\n\n${getDemoInstructions(demo)}\n\nBORIS RUNTIME CORE:\n${runtimeCore}`,
         },
         {
           role: 'user',
@@ -162,6 +166,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       answer,
       depth,
+      demo,
       creditLimit,
       runtime: {
         fullCoreChars: fullCore.length,
