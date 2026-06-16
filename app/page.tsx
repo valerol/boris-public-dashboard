@@ -41,18 +41,21 @@ const depthCosts: Record<BorisDepth, number> = {
 const demoDescriptions: Record<BorisDemo, { title: string; subtitle: string; sample: string }> = {
   UNKNOWN_REGISTER: {
     title: 'Unknown Register',
-    subtitle: 'Shows what BORIS refuses to fake: unknowns, assumptions, and missing evidence.',
-    sample: 'Should I launch an online store for elephant pants in Russia?',
+    subtitle: 'Finds critical unknowns, ranks risk, and proposes testable hypotheses instead of pretending certainty.',
+    sample:
+      'I run a small online business and want to choose the next growth step. Sales are steady but have stopped growing for the last few months. I know the product has some repeat buyers, the website gets regular traffic, and I have a limited budget for only one major move. I have already tried small discounts and a few social posts, but the result was weak. Help me understand which unknowns matter most, what hypotheses could explain the stagnation, and what information I should collect before deciding.',
   },
   SIMA_ANALYSIS: {
     title: 'SIMA Analysis',
-    subtitle: 'Shows decomposition: goal, system parts, dependencies, risks, and failure point.',
-    sample: 'Why is my online store not growing, and what part of the system should I fix first?',
+    subtitle: 'Decomposes the system, checks dependencies, and identifies the most likely bottleneck.',
+    sample:
+      'I manage a service project that should become more profitable, but the system feels stuck. We have enough incoming requests, several people are working on delivery, and customers are generally satisfied, yet the final profit is almost unchanged. We have already tried working faster and taking more requests, but that created more coordination problems. I need to see the system as parts, find the most likely constraint, and understand what should be changed first.',
   },
   DECISION_TRACE: {
     title: 'Why BORIS answered this way',
-    subtitle: 'Shows an audit-style trace of protocols without exposing hidden chain-of-thought.',
-    sample: 'Should I increase sales at any cost, or optimize for profit first?',
+    subtitle: 'Shows the decision path, assumptions, evidence checks, and protocol-level reasoning trace.',
+    sample:
+      'I need to choose between two strategies for a project. One strategy can grow faster but requires more money, more management attention, and creates a higher chance of a painful mistake. The other strategy is slower, but it is easier to control and safer for the team. We have tried cautious growth and it worked, but not fast enough. I want a recommendation, and I also want to see how the conclusion was reached, which assumptions mattered most, and what would change the decision.',
   },
 };
 
