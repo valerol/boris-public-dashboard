@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { COMPARISON_CREDIT_COST, DAILY_CREDIT_LIMIT, Locale, translations } from '../lib/i18n';
 
 type CreditLimit = {
@@ -168,7 +170,7 @@ export default function HomePage() {
                 <h2>{t.llmTitle}</h2>
                 <p>{t.llmSubtitle}</p>
               </div>
-              <div className="output answerOutput">{llmAnswer}</div>
+              <div className="output answerOutput"><ReactMarkdown remarkPlugins={[remarkGfm]}>{llmAnswer}</ReactMarkdown></div>
             </article>
 
             <article className="answerPanel borisPanel">
@@ -176,7 +178,7 @@ export default function HomePage() {
                 <h2>{t.borisTitle}</h2>
                 <p>{t.borisSubtitle}</p>
               </div>
-              <div className="output answerOutput">{borisAnswer}</div>
+              <div className="output answerOutput"><ReactMarkdown remarkPlugins={[remarkGfm]}>{borisAnswer}</ReactMarkdown></div>
             </article>
           </div>
         )}

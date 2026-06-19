@@ -17,7 +17,7 @@ body {
 }
 
 main {
-  max-width: 1180px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 48px 20px;
 }
@@ -206,3 +206,10 @@ button:disabled { opacity: .6; cursor: not-allowed; }
     padding-right: 0;
   }
 }
+
+
+.markdown h1,.markdown h2,.markdown h3{margin-top:1.25rem;margin-bottom:.5rem}
+.markdown ul,.markdown ol{padding-left:1.5rem}
+.markdown p{margin:.75rem 0}
+.markdown table{border-collapse:collapse;width:100%}
+.markdown th,.markdown td{border:1px solid var(--border);padding:8px}
